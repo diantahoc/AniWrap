@@ -63,3 +63,5 @@ AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap(@"C:\");
         }
 ```
 
+![Example demo](https://github.com/diantahoc/AniWrap/raw/master/test.png "Example demo")
+
