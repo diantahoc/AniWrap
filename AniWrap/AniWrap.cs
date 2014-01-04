@@ -614,22 +614,154 @@ namespace AniWrap
             return result;
         }
 
-        private void delete_file(string s)
+
+        public ReportStatus ReportPost(string board, int post_id, ReportReason reason, SolvedCaptcha captcha) 
+        {
+            string url = String.Format(@"https://sys.4chan.org/{0}/imgboard.php?mode=report&no={1}", board.ToLower(), post_id.ToString());
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendFormat("{0}={1}", "board", board.ToLower());
+
+            sb.AppendFormat("&{0}={1}", "no", post_id.ToString());
+
+            string report_cat = "vio";
+
+            switch (reason) 
+            {
+                case ReportReason.CommercialSpam:
+                case ReportReason.Advertisement:
+                    report_cat = "spam";
+                    break;
+                case ReportReason.IllegalContent:
+                    report_cat = "illegal";
+                    break;
+                case ReportReason.RuleViolation:
+                    report_cat = "vio";
+                    break;
+                default:
+                    break;
+            }
+
+            sb.AppendFormat("&{0}={1}", "cat", report_cat);
+
+            sb.AppendFormat("&{0}={1}", "recaptcha_response_field", captcha.ResponseField);
+
+            sb.AppendFormat("&{0}={1}", "recaptcha_challenge_field", captcha.ChallengeField);
+
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
+
+            request.Method = "POST";
+            request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
+            request.Referer = url;
+
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            using (var requestStream = request.GetRequestStream()) 
+            {
+                byte[] temp = Encoding.ASCII.GetBytes(sb.ToString());
+                requestStream.Write(temp, 0, temp.Length);
+            }
+
+            string response_text;
+
+            using (var response = request.GetResponse())
+            using (var responseStream = response.GetResponseStream())
+            using (var stream = new MemoryStream())
+            {
+                responseStream.CopyTo(stream);
+                response_text = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+            }
+
+            ReportStatus status = ReportStatus.Unkown;
+            
+            if (!String.IsNullOrEmpty(response_text)) 
+            {
+                response_text = response_text.ToLower();
+
+                if (response_text.Contains("report submitted")) 
+                {
+                    status = ReportStatus.Success;
+                }
+
+                if (response_text.Contains("you seem to have mistyped the captcha. please try again")) 
+                {
+                    status = ReportStatus.Captcha;
+                }
+
+                if (response_text.Contains("that post doesn't exist anymore")) 
+                {
+                    status = ReportStatus.PostGone;
+                }
+
+                if (response_text.Contains("banned"))
+                {
+                    status = ReportStatus.Banned;
+                }
+            }
+
+            return status;
+        }
+
+        public CaptchaChallenge GetCaptchaChallenge() 
+        {
+            WebClient nc = new WebClient();
+
+            CaptchaChallenge cc = null;
+
+            nc.Headers[HttpRequestHeader.UserAgent] = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
+                
+            string html = nc.DownloadString(@"http://www.google.com/recaptcha/api/noscript?k=6Ldp2bsSAAAAAAJ5uyx_lx34lJeEpTLVkP5k04qc");
+
+            HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+                
+            doc.LoadHtml(html);
+                
+            string re_challenge = doc.GetElementbyId("recaptcha_challenge_field").Attributes["value"].Value;
+               
+            HtmlAgilityPack.HtmlNode imagenode = doc.DocumentNode.SelectNodes("//img")[0];
+                
+            string image_src = imagenode.Attributes["src"].Value;
+               
+            if (!String.IsNullOrEmpty(image_src))
+            {
+                byte[] imagedata = nc.DownloadData("http://www.google.com/recaptcha/api/" + image_src);
+                MemoryStream memIO = new MemoryStream();
+                memIO.Write(imagedata, 0, imagedata.Length);
+                cc = new CaptchaChallenge(memIO, re_challenge);
+                nc.Dispose();
+            }
+            else
+            {
+                nc.Dispose();
+                throw new Exception("Image source is null");
+            }
+
+            return cc;
+        }
+
+        public enum ReportStatus { Success, Captcha, PostGone, Banned, Unkown }
+
+        public enum ReportReason { RuleViolation, IllegalContent, CommercialSpam, Advertisement }
+
+
+
+        private static void delete_file(string s)
         {
             if (File.Exists(s)) { File.Delete(s); }
         }
 
-        private DateTime parse_datetime(string s)
+        private static DateTime parse_datetime(string s)
         {
             return XmlConvert.ToDateTime(s, XmlDateTimeSerializationMode.Local);
         }
 
-        private string datetime_tostring(DateTime s)
+        private static string datetime_tostring(DateTime s)
         {
             return XmlConvert.ToString(s, XmlDateTimeSerializationMode.Local);
         }
 
-        public void check_dir(string path)
+        private static void check_dir(string path)
         {
             if (!Directory.Exists(path)) { Directory.CreateDirectory(path); }
         }

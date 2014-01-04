@@ -3,9 +3,8 @@ AniWrap
 
 .NET API Wrapper for the popular anime site.
 
-
-Example usage
-------
+Read API
+--------
 
 - Quick guide
 
@@ -25,7 +24,7 @@ Example usage
         }
 ```
 
-- Since AniWrap cache API requests, you can specify your own cache directory in the constructor
+- Since AniWrap cache API requests, you can specify your own cache directory in the constructor:
 
 ```csharp
 AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap(@"C:\");
@@ -63,5 +62,52 @@ AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap(@"C:\");
         }
 ```
 
+<<<<<<< HEAD
 ![Example demo](https://github.com/diantahoc/AniWrap/raw/master/test.png "Example demo")
 
+=======
+Output:
+
+![Example demo](https://github.com/diantahoc/AniWrap/raw/master/misc/api_test.png "Example demo")
+
+
+Write API
+----------
+
+- Post reporting
+
+AniWrap support post reporting.
+
+The following is a sample example on how to report a post:
+
+```csharp
+        static void Main(string[] args)
+        {
+            Console.Title = "AniWrap report test";
+
+            AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap();
+
+            AniWrap.CaptchaChallenge cc = api_wrapper.GetCaptchaChallenge();
+
+            string desktop_path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+
+            cc.CaptchaImage.Save(Path.Combine(desktop_path, "challenge.jpg"), System.Drawing.Imaging.ImageFormat.Jpeg);
+
+            Console.WriteLine("Please solve the challenge:");
+
+            string resp = Console.ReadLine();
+
+            AniWrap.SolvedCaptcha sv = new AniWrap.SolvedCaptcha(cc.ChallengeField, resp);
+
+            AniWrap.AniWrap.ReportStatus rs = api_wrapper.ReportPost("g", 39305145, AniWrap.AniWrap.ReportReason.CommercialSpam, sv);
+
+            Console.WriteLine(rs.ToString());
+
+            Console.ReadLine();
+        }
+```
+
+Output:
+
+![Post report demo](https://github.com/diantahoc/AniWrap/raw/master/misc/report_test.png "Post report demo")
+>>>>>>> Added post reporting support.

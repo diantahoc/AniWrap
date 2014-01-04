@@ -36,6 +36,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -44,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CaptchaChallenge.cs" />
+    <Compile Include="SolvedCaptcha.cs" />
     <Compile Include="DataTypes\APIResponse.cs" />
     <Compile Include="AniWrap.cs" />
     <Compile Include="DataTypes\CatalogItem.cs" />
