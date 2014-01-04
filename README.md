@@ -62,10 +62,6 @@ AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap(@"C:\");
         }
 ```
 
-<<<<<<< HEAD
-![Example demo](https://github.com/diantahoc/AniWrap/raw/master/test.png "Example demo")
-
-=======
 Output:
 
 ![Example demo](https://github.com/diantahoc/AniWrap/raw/master/misc/api_test.png "Example demo")
@@ -110,4 +106,3 @@ The following is a sample example on how to report a post:
 Output:
 
 ![Post report demo](https://github.com/diantahoc/AniWrap/raw/master/misc/report_test.png "Post report demo")
->>>>>>> Added post reporting support.
