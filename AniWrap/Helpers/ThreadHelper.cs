@@ -67,7 +67,7 @@ namespace AniWrap.Helpers
                         }
                         else
                         {
-                            throw new Exception("Unsupported data type");
+                            //throw new Exception("Unsupported data type");
                         }
                         break;
                     case "br":
@@ -106,7 +106,7 @@ namespace AniWrap.Helpers
                         }
                         else
                         {
-                            throw new Exception("Unsupported data type");
+                            //throw new Exception("Unsupported data type");
                         }
                         break;
                     case "pre":
@@ -134,8 +134,8 @@ namespace AniWrap.Helpers
                         //Oekaki Post 
                         break;
                     default:
-                        throw new Exception("Unsupported data type");
-                    // break;
+                        //throw new Exception("Unsupported data type");
+                    break;
                 }
             }
             return tokens.ToArray();
