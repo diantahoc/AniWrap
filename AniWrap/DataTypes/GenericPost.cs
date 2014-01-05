@@ -17,20 +17,7 @@ namespace AniWrap.DataTypes
 
        public DateTime Time;
 
-       private string _com;
-
-       public string Comment 
-       {
-           get 
-           {
-               return this._com;
-           }
-           set 
-           {
-               this._com = value;
-               this.CommentTokens = ThreadHelper.TokenizeComment(value); 
-           }
-       }
+       public string Comment { get; set; }
 
        public string Subject { get; set; }
        public string Trip { get; set; }
@@ -47,7 +34,7 @@ namespace AniWrap.DataTypes
 
        public enum CapcodeEnum { Admin, Mod, Developer, None }
 
-       public CommentToken[] CommentTokens { get; private set; }
+       public CommentToken[] CommentTokens { get { return ThreadHelper.TokenizeComment(this.Comment); } }
 
        private List<int> _my_quoters = new List<int>();
 

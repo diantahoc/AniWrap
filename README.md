@@ -106,3 +106,52 @@ The following is a sample example on how to report a post:
 Output:
 
 ![Post report demo](https://github.com/diantahoc/AniWrap/raw/master/misc/report_test.png "Post report demo")
+
+
+- Post sending
+
+AniWrap support sending replies and making new threads.
+
+The following is an example showing how to reply to a thread.
+
+```csharp
+        static void Main(string[] args)
+        {
+            Console.Title = "AniWrap reply test";
+
+            AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap();
+
+            AniWrap.PostSender post_sender = new AniWrap.PostSender();
+
+            AniWrap.CaptchaChallenge cc = api_wrapper.GetCaptchaChallenge();
+
+            string desktop_path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+
+            cc.CaptchaImage.Save(Path.Combine(desktop_path, "challenge.jpg"), System.Drawing.Imaging.ImageFormat.Jpeg);
+
+            Console.WriteLine("Please solve the challenge:");
+
+            string captcha_resp = Console.ReadLine();
+
+            AniWrap.SolvedCaptcha sv = new AniWrap.SolvedCaptcha(cc.ChallengeField, captcha_resp);
+
+            AniWrap.PostSenderData data = new AniWrap.PostSenderData()
+            {
+                Name = "AniWrap Library",
+
+                Comment = "This is test",
+
+                PostPassword = "123456"
+            };
+
+            AniWrap.PostSenderResponse psr = post_sender.SendReply("g", 39306716, data, sv);
+
+            Console.WriteLine(String.Format("Response status: {0}", psr.Status.ToString()));
+
+            Console.ReadLine();
+        }
+```
+
+Output:
+
+![Reply demo](https://github.com/diantahoc/AniWrap/raw/master/misc/reply_test.png "Reply demo")
