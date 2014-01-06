@@ -135,7 +135,7 @@ namespace AniWrap.Helpers
                         break;
                     default:
                         //throw new Exception("Unsupported data type");
-                    break;
+                        break;
                 }
             }
             return tokens.ToArray();

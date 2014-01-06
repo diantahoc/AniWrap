@@ -7,11 +7,11 @@ using System.Drawing;
 
 namespace AniWrap
 {
-    public class CaptchaChallenge: IDisposable
+    public class CaptchaChallenge : IDisposable
     {
         private MemoryStream memio;
 
-        public CaptchaChallenge(MemoryStream data, string challenge) 
+        public CaptchaChallenge(MemoryStream data, string challenge)
         {
             this.memio = data;
             this.ChallengeField = challenge;
@@ -26,7 +26,7 @@ namespace AniWrap
 
         public string ChallengeField { get; private set; }
 
-        public void Dispose() 
+        public void Dispose()
         {
             this.CaptchaImage.Dispose();
             this.memio.Close();

@@ -9,7 +9,7 @@ namespace AniWrap
     {
         public static string imageLink = @"http://i.4cdn.org/#/src/$";
         public static string thumbLink = @"http://t.4cdn.org/#/thumb/$s.jpg";
-      
+
         public static DateTime ParseUTC_Stamp(int timestamp)
         {
             System.DateTime dateTime = new System.DateTime(1970, 1, 1, 0, 0, 0, 0);
@@ -67,6 +67,19 @@ namespace AniWrap
             {
                 return Convert.ToString(size);
             }
+        }
+
+        public static int GetBoardMaximumFileSize(string board)
+        {
+            if (board == "b" || board == "s4s" || board == "r9k") { return 2; }
+
+            if (board == "gd" || board == "hm" || board == "hr" || board == "po" || board == "r" || board == "s" || board == "trv" || board == "tg") { return 8; }
+
+            if (board == "out" || board == "p" || board == "w" || board == "wg") { return 5; }
+
+            if (board == "gif" || board == "soc" || board== "sp" || board == "wsg") { return 4; }
+
+            return 3;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace AniWrap.DataTypes
 {
     public class PostFile
     {
-        public string filename {get;set;}
+        public string filename { get; set; }
         public string hash { get; set; }
         public string ext { get; set; }
         public int thumbH { get; set; }

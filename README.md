@@ -56,7 +56,7 @@ AniWrap.AniWrap api_wrapper = new AniWrap.AniWrap(@"C:\");
             Console.WriteLine(String.Format("Name: {0} , Time {1}, PostNo. {2}", gp.Name, gp.Time.ToShortDateString(), gp.ID));
             Console.WriteLine("----------------------");
 
-            Console.WriteLine(gp.Comment);
+            Console.WriteLine(gp.CommentText);
 
             Console.WriteLine();
         }

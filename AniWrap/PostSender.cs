@@ -10,13 +10,108 @@ using System.Net;
 
 namespace AniWrap
 {
-   public class PostSender
+    public class PostSender : IDisposable
     {
+        private BackgroundWorker bg_r;
+        private BackgroundWorker bg_t;
+
         private string url_template = "https://sys.4chan.org/%/post";
 
-        public PostSenderResponse SendReply(string board, int threadID, PostSenderData data, SolvedCaptcha captcha) 
+
+        public PostSender()
         {
-            if (String.IsNullOrEmpty(board)) 
+            bg_r = new BackgroundWorker();
+            bg_r.DoWork += new DoWorkEventHandler(bg_r_DoWork);
+            bg_r.RunWorkerCompleted += new RunWorkerCompletedEventHandler(bg_r_RunWorkerCompleted);
+
+            bg_t = new BackgroundWorker();
+            bg_t.DoWork += new DoWorkEventHandler(bg_t_DoWork);
+            bg_t.RunWorkerCompleted += new RunWorkerCompletedEventHandler(bg_t_RunWorkerCompleted);
+        }
+
+
+
+        private void bg_r_DoWork(object sender, DoWorkEventArgs e)
+        {
+            if (e.Argument.GetType() == typeof(object[]))
+            {
+                object[] data = (object[])e.Argument;
+                try
+                {
+                    PostSenderResponse psr = SendReply((string)data[0], (int)data[1], (PostSenderData)data[2], (SolvedCaptcha)data[3]);
+
+                    e.Result = psr;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    e.Result = ex;
+                    e.Cancel = true;
+                    return;
+                }
+            }
+        }
+
+        private void bg_r_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+            {
+                if (SendRequestFailed != null)
+                {
+                    SendRequestFailed((Exception)(e.Result), SendType.Reply);
+                }
+            }
+            else
+            {
+                if (SendCompleted != null)
+                {
+                    SendCompleted((PostSenderResponse)e.Result, SendType.Reply);
+                }
+            }
+        }
+
+        private void bg_t_DoWork(object sender, DoWorkEventArgs e)
+        {
+            if (e.Argument.GetType() == typeof(object[]))
+            {
+                object[] data = (object[])e.Argument;
+                try
+                {
+                    PostSenderResponse psr = MakeThread((string)data[0], (PostSenderData)data[1], (SolvedCaptcha)data[2]);
+
+                    e.Result = psr;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    e.Result = ex;
+                    e.Cancel = true;
+                    return;
+                }
+            }
+        }
+
+        private void bg_t_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+            {
+                if (SendRequestFailed != null)
+                {
+                    SendRequestFailed((Exception)(e.Result), SendType.Thread);
+                }
+            }
+            else
+            {
+                if (SendCompleted != null)
+                {
+                    SendCompleted((PostSenderResponse)e.Result, SendType.Thread);
+                }
+            }
+        }
+
+        public PostSenderResponse SendReply(string board, int threadID, PostSenderData data, SolvedCaptcha captcha)
+        {
+            if (String.IsNullOrEmpty(board))
             {
                 throw new ArgumentNullException("Board cannot be null");
             }
@@ -29,47 +124,10 @@ namespace AniWrap
             if (data != null)
             {
 
-                if (String.IsNullOrEmpty(data.Comment) && String.IsNullOrEmpty(data.FileName)) 
+                if (String.IsNullOrEmpty(data.Comment) && String.IsNullOrEmpty(data.FileName))
                 {
                     throw new Exception("Blank posts are not allowed");
                 }
-
-                if (data.Comment.Length > 1500) 
-                {
-                    throw new Exception("Comment is too long");
-                }
-
-                if (!data.Is4chanPass && (captcha == null)) { throw new ArgumentNullException("Captcha is null"); }
-
-                if (!data.Is4chanPass && (captcha != null)) 
-                {
-                    if (string.IsNullOrEmpty(captcha.ResponseField)) { throw new ArgumentNullException("The captcha is unsolved"); }
-                }
-            }
-            else 
-            {
-                throw new ArgumentNullException("Post data is null");
-            }
-
-            return work(data, board, true, threadID, captcha);
-        }
-
-        public PostSenderResponse MakeThread(string board, PostSenderData data, SolvedCaptcha captcha) 
-        {
-            if (String.IsNullOrEmpty(board))
-            {
-                throw new ArgumentNullException("Board cannot be null");
-            }
-
-            if (data != null)
-            {
-                if (!String.IsNullOrEmpty(data.FilePath)) 
-                {
-                    if (!System.IO.File.Exists(data.FilePath)) 
-                    {
-                        throw new ArgumentException("The provided file path lead to a non-existing file");
-                    }
-                } 
 
                 if (data.Comment.Length > 1500)
                 {
@@ -88,10 +146,47 @@ namespace AniWrap
                 throw new ArgumentNullException("Post data is null");
             }
 
-            return work(data, board, false,0, captcha);
+            return work(data, board, true, threadID, captcha);
         }
 
-        private PostSenderResponse work(PostSenderData data, string board, bool isreply, int tid, SolvedCaptcha captcha) 
+        public PostSenderResponse MakeThread(string board, PostSenderData data, SolvedCaptcha captcha)
+        {
+            if (String.IsNullOrEmpty(board))
+            {
+                throw new ArgumentNullException("Board cannot be null");
+            }
+
+            if (data != null)
+            {
+                if (!String.IsNullOrEmpty(data.FilePath))
+                {
+                    if (!System.IO.File.Exists(data.FilePath))
+                    {
+                        throw new ArgumentException("The provided file path lead to a non-existing file");
+                    }
+                }
+
+                if (data.Comment.Length > 1500)
+                {
+                    throw new Exception("Comment is too long");
+                }
+
+                if (!data.Is4chanPass && (captcha == null)) { throw new ArgumentNullException("Captcha is null"); }
+
+                if (!data.Is4chanPass && (captcha != null))
+                {
+                    if (string.IsNullOrEmpty(captcha.ResponseField)) { throw new ArgumentNullException("The captcha is unsolved"); }
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException("Post data is null");
+            }
+
+            return work(data, board, false, 0, captcha);
+        }
+
+        private PostSenderResponse work(PostSenderData data, string board, bool isreply, int tid, SolvedCaptcha captcha)
         {
             PostSenderResponse resp = null;
 
@@ -103,20 +198,20 @@ namespace AniWrap
             List<UploadFile> files = null;
 
             // 'upfile' is the name of the the uploaded file
-            if (! (String.IsNullOrEmpty(data.FileName) | String.IsNullOrEmpty(data.FilePath)) )
+            if (!(String.IsNullOrEmpty(data.FileName) | String.IsNullOrEmpty(data.FilePath)))
             {
                 fs = new FileStream(data.FilePath, FileMode.Open);
                 files = new List<UploadFile>();
-                files.Add( 
+                files.Add(
                     new UploadFile
-                    { 
+                    {
                         Name = "upfile",
                         Filename = data.FileName,
                         ContentType = Common.Map_MIME_Type(data.FileName),
                         Stream = fs
                     }
                     );
-                }
+            }
             else
             {
                 files = new List<UploadFile>();
@@ -129,15 +224,15 @@ namespace AniWrap
                         Stream = Stream.Null
                     }
                     );
-                }
+            }
 
-            values.Add("MAX_FILE_SIZE", "3145728"); //Board dependant value. This is for /g/
+            values.Add("MAX_FILE_SIZE", Convert.ToString(Common.GetBoardMaximumFileSize(board) * 1024 * 1024)); //Board dependant value. This is for /g/
 
             values.Add("mode", "regist");
 
             if (isreply)
             {
-                values.Add("resto", tid.ToString());  
+                values.Add("resto", tid.ToString());
             }
 
             values.Add("name", data.Name);
@@ -154,12 +249,12 @@ namespace AniWrap
                 values.Add("recaptcha_challenge_field", captcha.ChallengeField);
             }
 
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url_template.Replace("%", board)); 
-            request.Method = "POST";   
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url_template.Replace("%", board));
+            request.Method = "POST";
             request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
             request.Referer = "http://boards.4chan.org/%".Replace("%", board);
 
-            
+
             //This is the part we encode data using "multipart/form-data" technique 
             //RFC 1867 : http://tools.ietf.org/html/rfc1867#section-6
 
@@ -216,6 +311,47 @@ namespace AniWrap
             }
             return resp;
         }
+
+        public void MakeThreadAsyc(string board, PostSenderData data, SolvedCaptcha captcha)
+        {
+            if (bg_t.IsBusy)
+            {
+                throw new Exception("Thread maker is busy!");
+            }
+            else
+            {
+                bg_t.RunWorkerAsync(new object[] { board, data, captcha });
+            }
+        }
+
+        public void SendReplyAsyc(string board, int threadID, PostSenderData data, SolvedCaptcha captcha)
+        {
+            if (bg_r.IsBusy)
+            {
+                throw new Exception("Reply sender is busy!");
+            }
+            else
+            {
+                bg_r.RunWorkerAsync(new object[] { board, threadID, data, captcha });
+            }
+        }
+
+        public delegate void SendRequestCompleteEvent(PostSenderResponse psr, SendType t);
+
+        public event SendRequestCompleteEvent SendCompleted;
+
+        public delegate void SendRequestFailedEvent(Exception ex, SendType t);
+
+        public event SendRequestFailedEvent SendRequestFailed;
+
+        public enum SendType { Reply, Thread }
+
+        public void Dispose()
+        {
+            bg_r.Dispose();
+            bg_t.Dispose();
+        }
+
     }
 
     public class UploadFile
@@ -233,7 +369,7 @@ namespace AniWrap
     public class PostSenderData
     {
 
-        public PostSenderData() 
+        public PostSenderData()
         {
             this.Is4chanPass = false;
         }
@@ -260,11 +396,11 @@ namespace AniWrap
 
     public class PostSenderResponse
     {
-        public PostSenderResponse(string response_data) 
+        public PostSenderResponse(string response_data)
         {
             this.Status = get_status(response_data);
 
-            if (this.Status == ResponseStatus.Success) 
+            if (this.Status == ResponseStatus.Success)
             {
                 try
                 {
@@ -275,7 +411,7 @@ namespace AniWrap
                     this.ResponseBody = response_data;
                 }
             }
-            else 
+            else
             {
                 this.ResponseBody = response_data;
             }
@@ -370,7 +506,7 @@ namespace AniWrap
             return ResponseStatus.Unknown;
         }
 
-        private string get_new_reply_id(string response_data) 
+        private string get_new_reply_id(string response_data)
         {
             HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
             doc.LoadHtml(response_data);
@@ -407,9 +543,9 @@ namespace AniWrap
 
                 return String.Format("{0}:{1}", dataa[0].Split(':')[1], dataa[1].Split(':')[1]);
             }
-            else 
+            else
             {
-                return response_data; 
+                return response_data;
             }
         }
     }

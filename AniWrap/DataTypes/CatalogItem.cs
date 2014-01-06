@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AniWrap.DataTypes
 {
-    public class CatalogItem 
+    public class CatalogItem
     {
         public int ID;
         public DateTime time;

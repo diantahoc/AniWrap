@@ -5,11 +5,11 @@ using System.Text;
 
 namespace AniWrap.DataTypes
 {
-   public class Reply : GenericPost
+    public class Reply : GenericPost
     {
         public Thread Owner { get; private set; }
 
-        public Reply(Thread owner, GenericPost i) 
+        public Reply(Thread owner, GenericPost i)
         {
             this.Owner = owner;
             base.Board = owner.Board;
