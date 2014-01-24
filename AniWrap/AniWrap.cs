@@ -703,6 +703,98 @@ namespace AniWrap
             return status;
         }
 
+        public DeleteStatus DeletePost(string board, int thread_id, int post_id, string password, bool file_only)
+        {
+            string url = string.Format(@"https://sys.4chan.org/{0}/imgboard.php", board);
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendFormat("{0}={1}", "mode", "usrdel");
+
+            sb.AppendFormat("{0}={1}", "res", thread_id);
+
+            sb.AppendFormat("&{0}={1}", "pwd", password);
+
+            sb.AppendFormat("&{0}={1}", post_id, "delete");
+
+            if (file_only)
+            {
+                sb.AppendFormat("&{0}={1}", "onlyimgdel", "on");
+            }
+
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
+
+            request.Method = "POST";
+            request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)";
+            request.Referer = url;
+
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            using (Stream requestStream = request.GetRequestStream())
+            {
+                byte[] temp = Encoding.ASCII.GetBytes(sb.ToString());
+                requestStream.Write(temp, 0, temp.Length);
+            }
+
+            string response_text;
+
+            using (WebResponse response = request.GetResponse())
+            {
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        {
+                            responseStream.CopyTo(stream);
+                            response_text = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+                        }
+                    }
+                }
+            }
+
+            DeleteStatus status = DeleteStatus.Unkown;
+
+            if (!String.IsNullOrEmpty(response_text))
+            {
+                response_text = response_text.ToLower();
+
+                if (response_text.Contains("updating index...") || response_text.Contains("please delete posts less often!"))
+                {
+                    status = DeleteStatus.Success;
+                }
+
+                if (response_text.Contains("error: password incorrect"))
+                {
+                    status = DeleteStatus.BadPassword;
+                }
+
+                if (response_text.Contains("please wait longer before deleting your post"))
+                {
+                    status = DeleteStatus.WaitLonger;
+                }
+
+                if (response_text.Contains("can't find the post"))
+                {
+                    status = DeleteStatus.PostGone;
+                }
+
+                if (response_text.Contains("4chan - banned"))
+                {
+                    status = DeleteStatus.Banned;
+                }
+
+                if (response_text.Contains("error: our system thinks your post is spam"))
+                {
+                    status = DeleteStatus.Spam;
+                }
+
+            }
+
+            return status;
+        }
+
+        public enum DeleteStatus { Success, WaitLonger, PostGone, Banned, BadPassword, Unkown, Spam }
+
         public CaptchaChallenge GetCaptchaChallenge()
         {
             WebClient nc = new WebClient();
@@ -742,9 +834,8 @@ namespace AniWrap
 
         public enum ReportStatus { Success, Captcha, PostGone, Banned, Unkown }
 
+
         public enum ReportReason { RuleViolation, IllegalContent, CommercialSpam, Advertisement }
-
-
 
         private static void delete_file(string s)
         {
