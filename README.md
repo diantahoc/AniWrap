@@ -3,6 +3,18 @@ AniWrap
 
 .NET API Wrapper for the popular anime site.
 
+Writing features:
+- Post sending.
+- Post reporting.
+- Post removal.
+
+Reading features:
+- Catalog fetching.
+- Thread fetching
+- Pages (index) fetching.
+
+Please not that the writing features are not official, so thay migt not work in case someting in the site is changed.
+
 Read API
 --------
 
@@ -155,3 +167,14 @@ The following is an example showing how to reply to a thread.
 Output:
 
 ![Reply demo](https://github.com/diantahoc/AniWrap/raw/master/misc/reply_test.png "Reply demo")
+
+
+- Post removal
+
+To remove a post, do the following:
+
+```csharp
+//Board, Thread ID, Post ID, Password, File Only
+AniWrap.AniWrap.DeletePost("g", 39800493, 39802345, "123456", false);
+```
+
