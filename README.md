@@ -13,7 +13,7 @@ Reading features:
 - Thread fetching
 - Pages (index) fetching.
 
-Please not that the writing features are not official, so thay migt not work in case someting in the site is changed.
+Please note that the writing features are not official, so thay migt not work in case someting in the site is changed.
 
 Read API
 --------
