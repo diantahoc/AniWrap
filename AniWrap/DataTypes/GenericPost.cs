@@ -48,6 +48,7 @@ namespace AniWrap.DataTypes
         public string Trip { get; set; }
         public string Name { get; set; }
         public string Email { get; set; }
+        public string PosterID { get; set; }
         public string Board { get; set; }
 
         public PostFile File;

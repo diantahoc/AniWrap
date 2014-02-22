@@ -215,6 +215,15 @@ namespace AniWrap
                 t.Trip = "";
             }
 
+            if (data["id"] != null)
+            {
+                t.PosterID = data["id"].ToString();
+            }
+            else
+            {
+                t.PosterID = "";
+            }
+
             if (data["capcode"] != null)
             {
                 switch (data["capcode"].ToString())
@@ -357,6 +366,15 @@ namespace AniWrap
             else
             {
                 t.Trip = "";
+            }
+
+            if (data["id"] != null)
+            {
+                t.PosterID = data["id"].ToString();
+            }
+            else
+            {
+                t.PosterID = "";
             }
 
             if (data["country"] != null)
@@ -614,7 +632,6 @@ namespace AniWrap
             return result;
         }
 
-
         public ReportStatus ReportPost(string board, int post_id, ReportReason reason, SolvedCaptcha captcha)
         {
             string url = String.Format(@"https://sys.4chan.org/{0}/imgboard.php?mode=report&no={1}", board.ToLower(), post_id.ToString());
@@ -711,7 +728,7 @@ namespace AniWrap
 
             sb.AppendFormat("{0}={1}", "mode", "usrdel");
 
-            sb.AppendFormat("{0}={1}", "res", thread_id);
+            sb.AppendFormat("&{0}={1}", "res", thread_id);
 
             sb.AppendFormat("&{0}={1}", "pwd", password);
 
@@ -758,7 +775,9 @@ namespace AniWrap
             {
                 response_text = response_text.ToLower();
 
-                if (response_text.Contains("updating index...") || response_text.Contains("please delete posts less often!"))
+                if (response_text.Contains("updating index...") ||
+                   response_text.Contains("please delete posts less often!") ||
+                   response_text.Contains(string.Format("<meta http-equiv=\"refresh\" content=\"0;url=http://boards.4chan.org/{0}/res/{1}#p{1}\">", board, thread_id)))
                 {
                     status = DeleteStatus.Success;
                 }
@@ -833,7 +852,6 @@ namespace AniWrap
         }
 
         public enum ReportStatus { Success, Captcha, PostGone, Banned, Unkown }
-
 
         public enum ReportReason { RuleViolation, IllegalContent, CommercialSpam, Advertisement }
 

@@ -434,6 +434,7 @@ namespace AniWrap
             SubjectRequired,
             NoBoard,
             FileRequired,
+            Warned,
             Unknown
         }
 
@@ -503,6 +504,11 @@ namespace AniWrap
                 return ResponseStatus.FileRequired;
             }
 
+            if (str.Contains("issued a warning"))
+            {
+                return ResponseStatus.Warned;
+            }
+
             return ResponseStatus.Unknown;
         }
 
@@ -548,5 +554,6 @@ namespace AniWrap
                 return response_data;
             }
         }
+
     }
 }
