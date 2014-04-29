@@ -226,7 +226,7 @@ namespace AniWrap
                     );
             }
 
-            values.Add("MAX_FILE_SIZE", Convert.ToString(Common.GetBoardMaximumFileSize(board) * 1024 * 1024)); //Board dependant value. This is for /g/
+            values.Add("MAX_FILE_SIZE", Convert.ToString(Common.GetBoardMaximumFileSize(board) * 1024 * 1024));
 
             values.Add("mode", "regist");
 

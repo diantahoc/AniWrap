@@ -8,11 +8,11 @@ namespace AniWrap.DataTypes
 {
     public class ThreadContainer
     {
-        private Dictionary<int, Reply> _childs;
+        private Dictionary<int, GenericPost> _childs;
 
         public ThreadContainer(Thread instance)
         {
-            _childs = new Dictionary<int, Reply>();
+            _childs = new Dictionary<int, GenericPost>();
             this.Instance = instance;
             this.Title = ThreadHelper.Guess_Post_Title(instance);
         }
@@ -26,41 +26,15 @@ namespace AniWrap.DataTypes
         {
             if (_childs.ContainsKey(reply.ID))
             {
-                //?? what do
                 return;
             }
             else
             {
-                Reply r = new Reply(this.Instance, reply);
-
-                CommentToken[] tokens = ThreadHelper.TokenizeComment(reply.Comment);
-
-                foreach (CommentToken token in tokens)
-                {
-                    if (token.Type == CommentToken.TokenType.Quote)
-                    {
-                        int id = Convert.ToInt32(token.TokenData);
-                        if (id == this.Instance.ID) //if quoting op
-                        {
-                            this.Instance.MarkAsQuotedBy(r.ID);
-                        }
-                        else if (id == r.ID) //if quoting self
-                        {
-                            r.MarkAsQuotedBy(id);
-                        }
-                        else
-                        {
-                            Reply qq = GetPost(Convert.ToInt32(token.TokenData));
-                            if (qq != null) { qq.MarkAsQuotedBy(r.ID); }
-                        }
-                    }
-                }
-
-                this._childs.Add(reply.ID, r);
+                this._childs.Add(reply.ID, reply);
             }
         }
 
-        public Reply GetPost(int id)
+        public GenericPost GetPost(int id)
         {
             if (_childs.ContainsKey(id))
             {
@@ -80,7 +54,7 @@ namespace AniWrap.DataTypes
             }
         }
 
-        public Reply[] Replies { get { return _childs.Values.ToArray(); } }
+        public GenericPost[] Replies { get { return _childs.Values.ToArray(); } }
 
         public string Title { get; private set; }
 

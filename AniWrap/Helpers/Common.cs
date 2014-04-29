@@ -2,28 +2,34 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Security.Cryptography;
+using HtmlAgilityPack;
 
 namespace AniWrap
 {
     public static class Common
     {
-        public static string imageLink = @"http://i.4cdn.org/#/src/$";
-        public static string thumbLink = @"http://t.4cdn.org/#/thumb/$s.jpg";
+        /// <summary>
+        /// {0}: board, {1}: tim, {2}: ext
+        /// </summary>
+        public const string imageLink = @"http://i.4cdn.org/{0}/{1}.{2}";
+        /// <summary>
+        /// {0}:board, {1}: tim
+        /// </summary>
+        public const string thumbLink = @"http://t.4cdn.org/{0}/{1}s.jpg";
+
+        public static readonly DateTime UnixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, 0);
 
         public static DateTime ParseUTC_Stamp(int timestamp)
         {
-            System.DateTime dateTime = new System.DateTime(1970, 1, 1, 0, 0, 0, 0);
-            dateTime = dateTime.AddSeconds(timestamp);
-            return dateTime;
+            return UnixEpoch.AddSeconds(timestamp); ;
         }
 
         public static string MD5(string s)
         {
-            using (System.Security.Cryptography.MD5CryptoServiceProvider md5s = new System.Security.Cryptography.MD5CryptoServiceProvider())
+            using (MD5CryptoServiceProvider md5s = new MD5CryptoServiceProvider())
             {
-                byte[] bytes = System.Text.Encoding.ASCII.GetBytes(s);
-                string result = ByteArrayToString(md5s.ComputeHash(bytes));
-                return result;
+                return ByteArrayToString(md5s.ComputeHash(System.Text.Encoding.ASCII.GetBytes(s)));
             }
         }
 
@@ -35,6 +41,42 @@ namespace AniWrap
                 sb.Append(x.ToString("X2"));
             }
             return sb.ToString().ToLower();
+        }
+
+        public static string DecodeHTML(string text)
+        {
+            if (!(String.IsNullOrEmpty(text) || String.IsNullOrWhiteSpace(text)))
+            {
+                HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument(); doc.LoadHtml(text);
+                return System.Web.HttpUtility.HtmlDecode(Common.GetNodeText(doc.DocumentNode));
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        private static string GetNodeText(HtmlNode node)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (node.Name == "br")
+            {
+                sb.AppendLine();
+            }
+            else if (node.ChildNodes.Count > 0)
+            {
+                foreach (HtmlNode a in node.ChildNodes)
+                {
+                    sb.Append(Common.GetNodeText(a));
+                }
+            }
+            else
+            {
+                return node.InnerText;
+            }
+
+            return sb.ToString();
         }
 
         public static string Map_MIME_Type(string filename)

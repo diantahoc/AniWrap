@@ -86,7 +86,6 @@
     <Compile Include="libs\hap\1_4_0\HtmlAgilityPack\NameValuePairList.cs" />
     <Compile Include="DataTypes\PostFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DataTypes\Reply.cs" />
     <Compile Include="DataTypes\Thread.cs" />
     <Compile Include="DataTypes\ThreadContainer.cs" />
   </ItemGroup>

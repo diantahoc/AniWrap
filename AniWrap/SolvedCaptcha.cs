@@ -7,7 +7,6 @@ namespace AniWrap
 {
    public class SolvedCaptcha
     {
-
         public string ChallengeField { get; private set; }
         public string ResponseField { get; private set; }
 

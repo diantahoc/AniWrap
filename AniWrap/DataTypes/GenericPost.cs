@@ -16,7 +16,7 @@ namespace AniWrap.DataTypes
 
         public int ID { get; set; }
 
-        public DateTime Time;
+        public DateTime Time { get; set; }
 
         public string Comment { get; set; }
 
@@ -24,55 +24,44 @@ namespace AniWrap.DataTypes
         {
             get
             {
-                HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
-                doc.LoadHtml(this.Comment);
-
-                StringBuilder sb = new StringBuilder();
-
-                foreach (HtmlAgilityPack.HtmlNode node in doc.DocumentNode.ChildNodes) 
-                {
-                    if (node.Name == "br")
-                    {
-                        sb.AppendLine();
-                    }
-                    else 
-                    {
-                        sb.Append(node.InnerText);
-                    }
-                }
-                return HttpUtility.HtmlDecode(sb.ToString());
+                return Common.DecodeHTML(this.Comment);
             }
         }
 
         public string Subject { get; set; }
+
         public string Trip { get; set; }
+
         public string Name { get; set; }
+
         public string Email { get; set; }
-        public string PosterID { get; set; }
+
         public string Board { get; set; }
 
         public PostFile File;
 
         public CapcodeEnum Capcode { get; set; }
 
-        public string country_flag { get; set; }
-        public string country_name { get; set; }
+        public string CountryFlag { get; set; }
+        public string CountryName { get; set; }
+
+        public enum PostType { FourChan, Fuuka, FoolFuuka }
 
         public enum CapcodeEnum { Admin, Mod, Developer, None }
 
-        public CommentToken[] CommentTokens { get { return ThreadHelper.TokenizeComment(this.Comment); } }
-
-        private List<int> _my_quoters = new List<int>();
-
-        public void MarkAsQuotedBy(int id)
+        public enum ThreadTag
         {
-            if (!_my_quoters.Contains(id))
-            {
-                _my_quoters.Add(id);
-            }
+            Other,
+            Game,
+            Loop,
+            Japanese,
+            Anime,
+            Porn,
+            Hentai,
+            NoTag,
+            Unknown
         }
 
-        public int[] QuotedBy { get { return _my_quoters.ToArray(); } }
-
+        public ThreadTag Tag { get; set; }
     }
 }

@@ -107,7 +107,7 @@ The following is a sample example on how to report a post:
 
             AniWrap.SolvedCaptcha sv = new AniWrap.SolvedCaptcha(cc.ChallengeField, resp);
 
-            AniWrap.AniWrap.ReportStatus rs = api_wrapper.ReportPost("g", 39305145, AniWrap.AniWrap.ReportReason.CommercialSpam, sv);
+            AniWrap.ReportStatus rs = api_wrapper.ReportPost("g", 39305145, AniWrap.AniWrap.ReportReason.CommercialSpam, sv);
 
             Console.WriteLine(rs.ToString());
 

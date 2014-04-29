@@ -8,6 +8,8 @@ using System.Web;
 using System.Xml;
 using AniWrap.DataTypes;
 using AniWrap.Helpers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace AniWrap
 {
@@ -38,7 +40,7 @@ namespace AniWrap
         /// 
         public CatalogItem[][] GetCatalog(string board)
         {
-            APIResponse response = LoadAPI("http://a.4cdn.org/%/catalog.json".Replace("%", board));
+            APIResponse response = LoadAPI(string.Format("http://a.4cdn.org/{0}/catalog.json", board));
 
             switch (response.Error)
             {
@@ -46,7 +48,8 @@ namespace AniWrap
 
                     List<CatalogItem[]> il = new List<CatalogItem[]>();
 
-                    List<Dictionary<string, object>> list = (List<Dictionary<string, object>>)Newtonsoft.Json.JsonConvert.DeserializeObject(response.Data, typeof(List<Dictionary<string, object>>));
+                    List<Dictionary<string, object>> list = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(response.Data);
+
                     //p is page index
                     //u is thread index
                     for (int p = 0; p < list.Count(); p++)
@@ -90,11 +93,11 @@ namespace AniWrap
                 case APIResponse.ErrorType.NoError:
                     List<ThreadContainer> il = new List<ThreadContainer>();
 
-                    Dictionary<string, object> list = (Dictionary<string, object>)Newtonsoft.Json.JsonConvert.DeserializeObject(response.Data, typeof(Dictionary<string, object>));
+                    Dictionary<string, object> list = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Data);
 
                     //u is thread index
 
-                    Newtonsoft.Json.Linq.JArray threads = (Newtonsoft.Json.Linq.JArray)list["threads"];
+                    JArray threads = (JArray)list["threads"];
 
                     for (int u = 0; u < threads.Count; u++)
                     {
@@ -128,17 +131,17 @@ namespace AniWrap
 
         public ThreadContainer GetThreadData(string board, int id)
         {
-            APIResponse response = LoadAPI("http://a.4cdn.org/#/res/$.json".Replace("#", board).Replace("$", id.ToString()));
+            APIResponse response = LoadAPI(string.Format("http://a.4cdn.org/{0}/thread/{1}.json", board, id));
 
             switch (response.Error)
             {
                 case APIResponse.ErrorType.NoError:
                     ThreadContainer tc = null;
-                    Dictionary<string, object> list = (Dictionary<string, object>)Newtonsoft.Json.JsonConvert.DeserializeObject(response.Data, typeof(Dictionary<string, object>));
+                    Dictionary<string, object> list = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Data);
 
                     if (list.ContainsKey("posts"))
                     {
-                        Newtonsoft.Json.Linq.JContainer data = (Newtonsoft.Json.Linq.JContainer)list["posts"];
+                        JContainer data = list["posts"] as JContainer;
                         tc = new ThreadContainer(ParseThread(data[0], board));
 
                         for (int index = 1; index < data.Count; index++)
@@ -160,7 +163,7 @@ namespace AniWrap
             }
         }
 
-        private static Thread ParseThread(Newtonsoft.Json.Linq.JToken data, string board)
+        private static Thread ParseThread(JToken data, string board)
         {
             Thread t = new Thread();
 
@@ -171,19 +174,11 @@ namespace AniWrap
             {
                 t.Comment = data["com"].ToString();
             }
-            else
-            {
-                t.Comment = "";
-            }
 
             //mail
             if (data["email"] != null)
             {
                 t.Email = HttpUtility.HtmlDecode(data["email"].ToString());
-            }
-            else
-            {
-                t.Email = "";
             }
 
             //poster name
@@ -191,62 +186,32 @@ namespace AniWrap
             {
                 t.Name = HttpUtility.HtmlDecode(data["name"].ToString());
             }
-            else
-            {
-                t.Name = "";
-            }
 
             //subject
             if (data["sub"] != null)
             {
                 t.Subject = HttpUtility.HtmlDecode(data["sub"].ToString());
             }
-            else
-            {
-                t.Subject = "";
-            }
 
             if (data["trip"] != null)
             {
                 t.Trip = data["trip"].ToString();
             }
-            else
-            {
-                t.Trip = "";
-            }
-
-            if (data["id"] != null)
-            {
-                t.PosterID = data["id"].ToString();
-            }
-            else
-            {
-                t.PosterID = "";
-            }
 
             if (data["capcode"] != null)
             {
-                switch (data["capcode"].ToString())
-                {
-                    /*none, mod, admin, admin_highlight, developer*/
-                    case "admin":
-                    case "admin_highlight":
-                        t.Capcode = GenericPost.CapcodeEnum.Admin;
-                        break;
-                    case "developer":
-                        t.Capcode = GenericPost.CapcodeEnum.Developer;
-                        break;
-                    case "mod":
-                        t.Capcode = GenericPost.CapcodeEnum.Mod;
-                        break;
-                    default:
-                        break;
-                }
+                t.Capcode = parse_capcode(Convert.ToString(data["capcode"]));
             }
+
+            if (data["tag"] != null)
+            {
+                t.Tag = parse_tag(Convert.ToString(data["tag"]));
+            }
+            else { t.Tag = GenericPost.ThreadTag.NoTag; }
 
             if (data["sticky"] != null)
             {
-                t.IsSticky = (Convert.ToInt32(data["sticky"]) == 1);
+                t.IsSticky = (data["sticky"].ToString() == "1");
             }
 
             if (data["closed"] != null)
@@ -256,20 +221,12 @@ namespace AniWrap
 
             if (data["country"] != null)
             {
-                t.country_flag = data["country"].ToString();
-            }
-            else
-            {
-                t.country_flag = "";
+                t.CountryFlag = data["country"].ToString();
             }
 
             if (data["country_name"] != null)
             {
-                t.country_name = data["country_name"].ToString();
-            }
-            else
-            {
-                t.country_name = "";
+                t.CountryName = data["country_name"].ToString();
             }
 
             t.File = ParseFile(data, board);
@@ -279,19 +236,36 @@ namespace AniWrap
             t.ID = Convert.ToInt32(data["no"]); ;
 
             t.text_replies = Convert.ToInt32(data["replies"]);
-            t.Time = Common.ParseUTC_Stamp(Convert.ToInt32(data["time"]));
 
+            t.Time = Common.ParseUTC_Stamp(Convert.ToInt32(data["time"]));
 
             return t;
         }
 
-        private static PostFile ParseFile(Newtonsoft.Json.Linq.JToken data, string board)
+        private static GenericPost.CapcodeEnum parse_capcode(string cap)
+        {
+            switch (cap.ToLower())
+            {
+                /*none, mod, admin, admin_highlight, developer*/
+                case "admin":
+                case "admin_highlight":
+                    return GenericPost.CapcodeEnum.Admin;
+                case "developer":
+                    return GenericPost.CapcodeEnum.Developer;
+                case "mod":
+                    return GenericPost.CapcodeEnum.Mod;
+                default:
+                    return GenericPost.CapcodeEnum.None;
+            }
+        }
+
+        private static PostFile ParseFile(JToken data, string board)
         {
             if (data["filename"] != null)
             {
                 PostFile pf = new PostFile();
                 pf.filename = HttpUtility.HtmlDecode(data["filename"].ToString());
-                pf.ext = data["ext"].ToString().Replace(".", "");
+                pf.ext = data["ext"].ToString().Remove(0, 1);
                 pf.height = Convert.ToInt32(data["h"]);
                 pf.width = Convert.ToInt32(data["w"]);
                 pf.thumbW = Convert.ToInt32(data["tn_w"]);
@@ -313,7 +287,7 @@ namespace AniWrap
             }
         }
 
-        private static GenericPost ParseReply(Newtonsoft.Json.Linq.JToken data, string board)
+        private static GenericPost ParseReply(JToken data, string board)
         {
             GenericPost t = new GenericPost();
 
@@ -324,19 +298,11 @@ namespace AniWrap
             {
                 t.Comment = data["com"].ToString();
             }
-            else
-            {
-                t.Comment = "";
-            }
 
             //mail
             if (data["email"] != null)
             {
                 t.Email = HttpUtility.HtmlDecode(data["email"].ToString());
-            }
-            else
-            {
-                t.Email = "";
             }
 
             //poster name
@@ -344,55 +310,31 @@ namespace AniWrap
             {
                 t.Name = HttpUtility.HtmlDecode(data["name"].ToString());
             }
-            else
-            {
-                t.Name = "";
-            }
 
             //subject
             if (data["sub"] != null)
             {
                 t.Subject = HttpUtility.HtmlDecode(data["sub"].ToString());
             }
-            else
-            {
-                t.Subject = "";
-            }
 
             if (data["trip"] != null)
             {
                 t.Trip = data["trip"].ToString();
             }
-            else
-            {
-                t.Trip = "";
-            }
-
-            if (data["id"] != null)
-            {
-                t.PosterID = data["id"].ToString();
-            }
-            else
-            {
-                t.PosterID = "";
-            }
 
             if (data["country"] != null)
             {
-                t.country_flag = data["country"].ToString();
-            }
-            else
-            {
-                t.country_flag = "";
+                t.CountryFlag = data["country"].ToString();
             }
 
             if (data["country_name"] != null)
             {
-                t.country_name = data["country_name"].ToString();
+                t.CountryName = data["country_name"].ToString();
             }
-            else
+            
+            if (data["capcode"] != null)
             {
-                t.country_name = "";
+                t.Capcode = parse_capcode(Convert.ToString(data["capcode"]));
             }
 
             t.File = ParseFile(data, board);
@@ -404,90 +346,67 @@ namespace AniWrap
             return t;
         }
 
-        private static CatalogItem ParseJToken_Catalog(Newtonsoft.Json.Linq.JToken thread, int pagenumber, string board)
+        private static CatalogItem ParseJToken_Catalog(JToken thread, int pagenumber, string board)
         {
-            CatalogItem ci = new CatalogItem();
+            GenericPost base_data = ParseReply(thread, board);
 
-            //post number - no
-            ci.ID = Convert.ToInt32(thread["no"]);
-
-            // post time - now
-            ci.time = Common.ParseUTC_Stamp(Convert.ToInt32(thread["time"]));
-
-            //name 
-            if (thread["name"] != null)
-            {
-                ci.name = thread["name"].ToString();
-            }
-            else
-            {
-                ci.name = "";
-            }
-
-            if (thread["com"] != null)
-            {
-                ci.comment = thread["com"].ToString();
-            }
-            else
-            {
-                ci.comment = "";
-            }
-
-            if (thread["trip"] != null)
-            {
-                ci.trip = thread["trip"].ToString();
-            }
-            else
-            {
-                ci.trip = "";
-            }
-
-            if (thread["filename"] != null)
-            {
-                PostFile pf = new PostFile();
-                pf.filename = thread["filename"].ToString();
-                pf.ext = thread["ext"].ToString().Replace(".", "");
-                pf.height = Convert.ToInt32(thread["h"]);
-                pf.width = Convert.ToInt32(thread["w"]);
-                pf.thumbW = Convert.ToInt32(thread["tn_w"]);
-                pf.thumbH = Convert.ToInt32(thread["tn_h"]);
-                pf.owner = ci.ID;
-                pf.thumbnail_tim = thread["tim"].ToString();
-                pf.board = board;
-
-                pf.hash = thread["md5"].ToString();
-                pf.size = Convert.ToInt32(thread["fsize"]);
-
-                ci.file = pf;
-            }
+            CatalogItem ci = new CatalogItem(base_data);
 
             if (thread["last_replies"] != null)
             {
-                Newtonsoft.Json.Linq.JContainer li = (Newtonsoft.Json.Linq.JContainer)thread["last_replies"];
+                JContainer li = (JContainer)thread["last_replies"];
 
                 List<GenericPost> repl = new List<GenericPost>();
 
                 foreach (Newtonsoft.Json.Linq.JObject j in li)
                 {
-                    repl.Add(ParseReply(j, board)); // HACK: parent must not be null.
+                    repl.Add(ParseReply(j, board));
                 }
 
                 ci.trails = repl.ToArray();
             }
 
+            if (thread["tag"] != null)
+            {
+                ci.Tag = parse_tag(Convert.ToString(thread["tag"]));
+            }
+            else { ci.Tag = GenericPost.ThreadTag.NoTag; }
+
             ci.image_replies = Convert.ToInt32(thread["images"]);
             ci.text_replies = Convert.ToInt32(thread["replies"]);
             ci.page_number = pagenumber;
 
+            ci.Board = board;
+
             return ci;
-            /*{
-           "tim": 1385141348984,
-           "time": 1385141348,
-           "resto": 0,
+            /*
            "bumplimit": 0,
            "imagelimit": 0,
            "omitted_posts": 1,
            "omitted_images": 0,*/
+        }
+
+        private static GenericPost.ThreadTag parse_tag(string tag)
+        {
+            switch (tag)
+            {
+                case "Other":
+                    return GenericPost.ThreadTag.Other;
+                case "Anime":
+                    return GenericPost.ThreadTag.Anime;
+                case "Game":
+                    return GenericPost.ThreadTag.Game;
+                case "Hentai":
+                    return GenericPost.ThreadTag.Hentai;
+                case "Japanese":
+                    return GenericPost.ThreadTag.Japanese;
+                case "Loop":
+                    return GenericPost.ThreadTag.Loop;
+                case "Porn":
+                    return GenericPost.ThreadTag.Porn;
+                default:
+                    return GenericPost.ThreadTag.Unknown;
+            }
         }
 
         #endregion
@@ -802,17 +721,20 @@ namespace AniWrap
                     status = DeleteStatus.Banned;
                 }
 
-                if (response_text.Contains("error: our system thinks your post is spam"))
+                if (response_text.Contains("our system thinks your post is spam"))
                 {
                     status = DeleteStatus.Spam;
                 }
 
+                if (response_text.Contains("you cannot delete a post this old"))
+                {
+                    status = DeleteStatus.PostIsTooOld;
+                }
             }
 
             return status;
         }
 
-        public enum DeleteStatus { Success, WaitLonger, PostGone, Banned, BadPassword, Unkown, Spam }
 
         public CaptchaChallenge GetCaptchaChallenge()
         {
@@ -851,28 +773,31 @@ namespace AniWrap
             return cc;
         }
 
-        public enum ReportStatus { Success, Captcha, PostGone, Banned, Unkown }
-
-        public enum ReportReason { RuleViolation, IllegalContent, CommercialSpam, Advertisement }
-
-        private static void delete_file(string s)
+        private void delete_file(string s)
         {
             if (File.Exists(s)) { File.Delete(s); }
         }
 
-        private static DateTime parse_datetime(string s)
+        private DateTime parse_datetime(string s)
         {
             return XmlConvert.ToDateTime(s, XmlDateTimeSerializationMode.Local);
         }
 
-        private static string datetime_tostring(DateTime s)
+        private string datetime_tostring(DateTime s)
         {
             return XmlConvert.ToString(s, XmlDateTimeSerializationMode.Local);
         }
 
-        private static void check_dir(string path)
+        private void check_dir(string path)
         {
             if (!Directory.Exists(path)) { Directory.CreateDirectory(path); }
         }
     }
+
+    public enum DeleteStatus { Success, WaitLonger, PostGone, PostIsTooOld, Banned, BadPassword, Delete, Unkown, Spam }
+
+    public enum ReportStatus { Success, Captcha, PostGone, Banned, Unkown }
+
+    public enum ReportReason { RuleViolation, IllegalContent, CommercialSpam, Advertisement }
+
 }
