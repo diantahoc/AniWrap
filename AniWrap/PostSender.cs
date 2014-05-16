@@ -17,7 +17,6 @@ namespace AniWrap
 
         private string url_template = "https://sys.4chan.org/%/post";
 
-
         public PostSender()
         {
             bg_r = new BackgroundWorker();
@@ -368,7 +367,6 @@ namespace AniWrap
 
     public class PostSenderData
     {
-
         public PostSenderData()
         {
             this.Is4chanPass = false;

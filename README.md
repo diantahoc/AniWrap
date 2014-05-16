@@ -10,10 +10,10 @@ Writing features:
 
 Reading features:
 - Catalog fetching.
-- Thread fetching
+- Thread fetching.
 - Pages (index) fetching.
 
-Please note that the writing features are not official, so thay migt not work in case someting in the site is changed.
+Please note that the writing features are not official, so they might not work in case something in the site is changed.
 
 Read API
 --------

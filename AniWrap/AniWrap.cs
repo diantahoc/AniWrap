@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 
 namespace AniWrap
 {
-    public class AniWrap
+    public class AniWrap 
     {
         private string _cache_dir;
 
@@ -162,6 +162,49 @@ namespace AniWrap
                     return null;
             }
         }
+
+        /// <summary>
+        /// Get the thread ids of a given board
+        /// </summary>
+        /// <param name="board">board name</param>
+        /// <returns>Return a Dictionary of thread ids as keys and the last updated time as the values</returns>
+        public Dictionary<int, DateTime> GetBoardThreadsID(string board)
+        {
+            APIResponse response = LoadAPI("http://a.4cdn.org/#/threads.json".Replace("#", board));
+
+            switch (response.Error)
+            {
+                case APIResponse.ErrorType.NoError:
+
+                    Dictionary<int, DateTime> dic = new Dictionary<int, DateTime>();
+
+                    List<object> pages = Newtonsoft.Json.JsonConvert.DeserializeObject<List<object>>(response.Data);
+
+
+                    for (int i = 0; i < pages.Count; i++)
+                    {
+                        Newtonsoft.Json.Linq.JObject page = (Newtonsoft.Json.Linq.JObject)pages[i];
+                        Newtonsoft.Json.Linq.JArray threads = (Newtonsoft.Json.Linq.JArray)page["threads"];
+
+                        foreach (Newtonsoft.Json.Linq.JObject threadinfo in threads)
+                        {
+                            dic.Add(Convert.ToInt32(threadinfo["no"]), Common.ParseUTC_Stamp(Convert.ToInt32(threadinfo["last_modified"])));
+                        }
+                    }
+
+                    return dic;
+
+                case APIResponse.ErrorType.NotFound:
+                    throw new Exception("404");
+
+                case APIResponse.ErrorType.Other:
+                    throw new Exception(response.Data);
+
+                default:
+                    return null;
+            }
+        }
+
 
         private static Thread ParseThread(JToken data, string board)
         {
@@ -734,7 +777,6 @@ namespace AniWrap
 
             return status;
         }
-
 
         public CaptchaChallenge GetCaptchaChallenge()
         {
